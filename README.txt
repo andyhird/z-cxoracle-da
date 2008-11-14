@@ -34,3 +34,8 @@ Z cxOracle DA
         Oracle DBTIMEZONE and use that instead. If you want to change the
         timezone used for datetime conversion then edit db.py and modify
         CONVERSION_TIMEZONE.
+
+    Authors
+
+        Andy Hird
+        Ryan Hughes <ryan@linuxbox.com>
