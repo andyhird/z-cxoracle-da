@@ -1,0 +1,5 @@
+Zope cxOracle Database Adaptor
+
+  0.5
+
+    This is the first release of the Zope cxOracle Database Adaptor
