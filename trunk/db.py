@@ -73,7 +73,7 @@ class DB(TM):
     # cxOracle curs.description returns stuff like:
     # [('WAREHOUSE_ID', <type 'cx_Oracle.NUMBER'>, 127, 22, 0, -127, 0), ('COUNTRY', <type 'cx_Oracle.STRING'>, 30, 30, 0, 0, 1), ('CITY', <type 'cx_Oracle.STRING'>, 30, 30, 0, 0, 1)]
     
-    def query(self, query_string, max_rows=9999999, query_data=None):
+    def query(self, query_string, max_rows=9999999, query_data=None, restarted=False):
         self._register()
         c = self.cursor
         queries = filter(None, map(strip, split(query_string, '\0')))
@@ -82,10 +82,24 @@ class DB(TM):
         desc = None
         for qs in queries:
             #print "query executing %s"%qs
-            if query_data:
-                r = c.execute(qs, query_data)
-            else:
-                r = c.execute(qs)
+            try:
+                if query_data:
+                    r = c.execute(qs, query_data)
+                else:
+                    r = c.execute(qs)
+            except cx_Oracle.DatabaseError, e:
+                # If the connection was stale, we need to restart it.
+                if not restarted and e.args[0].code == 1012:
+                    # 1012 == "not logged on"
+                    self.db = self.Database_Connection(self.connection)
+                    self.cursor = self.db.cursor()
+                    # Make sure we don't have more than one level of recursion.
+                    # The database may actually be down, not just stale.
+                    return self.query(query_string, max_rows, query_data, True) 
+                else:
+                    raise e
+                
+
             if not r: continue
             d = c.description
             if d is None: continue
