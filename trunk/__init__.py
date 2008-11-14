@@ -9,7 +9,7 @@
 #
 ##############################################################################
 __doc__="ZcxOracle Database Adaptor Registration."
-__version__='$Revision: 0.5 $'[11:-2]
+__version__='$Revision: 0.6 $'[11:-2]
 
 import DA
 

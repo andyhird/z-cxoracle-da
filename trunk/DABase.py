@@ -9,7 +9,7 @@
 #
 ##############################################################################
 __doc__='''Database Connection adaptor for cxOracle'''
-__version__='$Revision: 0.5 $'[11:-2]
+__version__='$Revision: 0.6 $'[11:-2]
 
 import Shared.DC.ZRDB.Connection, sys
 from Globals import HTMLFile

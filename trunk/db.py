@@ -8,14 +8,17 @@
 # FOR A PARTICULAR PURPOSE
 #
 ##############################################################################
-__version__='$Revision: 0.5 $'[11:-2]
+__version__='$Revision: 0.6 $'[11:-2]
 
+from logging import getLogger
 import cx_Oracle, datetime
 from Shared.DC.ZRDB.TM import TM
 from DateTime import DateTime
 import datetime
 import string, sys
 from string import strip, split, find
+
+LOG = getLogger('ZRDB.Connection')
 
 # TODO: Add code in to handle db server going away
 #   Very minm. unset self.db and reopen at start of this method
@@ -42,9 +45,12 @@ class DB(TM):
         #print "_finish executed"
         self.db.commit()
 
-    def _abort(self):
+    def _abort(self, restarted=False):
         #print "_abort executed"
-        self.db.rollback()
+        try:
+            self.db.rollback()
+        except:
+            pass
 
     def str(self,v, StringType=type('')):
         if v is None: return ''
@@ -87,18 +93,22 @@ class DB(TM):
                     r = c.execute(qs, query_data)
                 else:
                     r = c.execute(qs)
-            except cx_Oracle.DatabaseError, e:
+            except Exception, e:
                 # If the connection was stale, we need to restart it.
-                if not restarted and e.args[0].code == 1012:
-                    # 1012 == "not logged on"
+                if not restarted:
+                    # Go back up the chain so that everybody agrees that we are
+                    # reconnected.
+					LOG.warning("Database connection is stale.  Attempting to re-open.")
+                    self._Connection.connect(self._Connection.connection_string)
                     self.db = self.Database_Connection(self.connection)
                     self.cursor = self.db.cursor()
                     # Make sure we don't have more than one level of recursion.
                     # The database may actually be down, not just stale.
                     return self.query(query_string, max_rows, query_data, True) 
                 else:
+					LOG.error("Failed to reopen stale database connection.")
+                    self._Connection.manage_close_connection(None)
                     raise e
-                
 
             if not r: continue
             d = c.description
@@ -136,3 +146,8 @@ class DB(TM):
             result = self._munge_datetime_results(items, result)
         return items, result
 
+    def close(self):
+        try:
+            self.db.close()
+        except:
+            pass

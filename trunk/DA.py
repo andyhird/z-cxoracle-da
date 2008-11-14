@@ -10,7 +10,7 @@
 ##############################################################################
 database_type='cxOracle'
 __doc__='''%s Database Connection''' % database_type
-__version__='$Revision: 0.5 $'[11:-2]
+__version__='$Revision: 0.6 $'[11:-2]
 
 from db import DB
 import Shared.DC.ZRDB.Connection, sys, DABase, os.path
@@ -36,8 +36,18 @@ class Connection(DABase.Connection):
 
     manage_properties=HTMLFile('connectionEdit', globals())
 
+    # The TM that DB inherits from doesn't have a link back to its Connection,
+    # and so can't tell those above when it discovers that the connection has
+    # gone down, or when it has brought the connection back up again.
+    # This replacement factory returns a modified DB that has a link back to
+    # the Connection.
+    def _factory(self, connection):
+        ret = DB(connection)
+        ret._Connection = self
+        return ret
+
     def factory(self): 
-        return DB
+        return self._factory
 
 classes=('DA.Connection',)
 
@@ -65,3 +75,4 @@ misc_={
     'conn': ImageFile(
         os.path.join('Shared','DC','ZRDB','www','DBAdapterFolder_icon.gif'))}
 
+# vim:ts=4:sts=4:sw=4:expandtab
